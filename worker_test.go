@@ -45,24 +45,23 @@ func TestWorkerStartDeclaresQueues(t *testing.T) {
 
 func TestWorker(t *testing.T) {
 	cases := []struct {
-		value  interface{}
-		err    error
-		queue  int
-		expErr error
+		value         interface{}
+		err, expErr   error
+		queue         int
 		acked, nacked bool
 	}{
 		{
 			value:  nil,
 			err:    nil,
 			queue:  1,
-			acked: true,
+			acked:  true,
 			nacked: false,
 		},
 		{
 			value:  &test{false},
 			err:    nil,
 			queue:  2,
-			acked: true,
+			acked:  true,
 			nacked: false,
 		},
 	}

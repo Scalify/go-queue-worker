@@ -4,4 +4,3 @@ package queueworker
 const (
 	contentTypeJSON = "application/json"
 )
-

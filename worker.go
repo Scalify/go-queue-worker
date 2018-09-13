@@ -25,6 +25,7 @@ func New(queue Queue, logger *logrus.Entry, parallelExecutions uint, queueNameJo
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate consumer tag UUID: %v", err)
 	}
+
 	return &Worker{
 		queue:               queue,
 		logger:              logger,
