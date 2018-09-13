@@ -1,0 +1,5 @@
+package: github.com/Scalify/go-queue-worker
+import:
+- package: github.com/streadway/amqp
+- package: github.com/Sirupsen/logrus
+- package: github.com/satori/go.uuid

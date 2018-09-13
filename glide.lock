@@ -1,0 +1,19 @@
+hash: 399d147ab0e07c0a2ffe5acef8167994c9157c9540a077c28d9a0c6a8574413e
+updated: 2018-09-13T16:18:09.763730913+02:00
+imports:
+- name: github.com/satori/go.uuid
+  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+- name: github.com/Sirupsen/logrus
+  version: f3df9aeffda7c12bd9f5a03f9251d75d35993165
+- name: github.com/streadway/amqp
+  version: 70e15c650864f4fc47f5d3c82ea117285480895d
+- name: golang.org/x/crypto
+  version: 0e37d006457bf46f9e6692014ba72ef82c33022c
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: d0be0721c37eeb5299f245a996a483160fc36940
+  subpackages:
+  - unix
+  - windows
+testImports: []
