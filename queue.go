@@ -38,13 +38,12 @@ func (w *Worker) publishResult(result interface{}) error {
 
 func (w *Worker) consumeJobs(ctx context.Context) error {
 	if err := w.queue.Qos(int(w.parallelExecutions), 0, false); err != nil {
-		w.logger.Fatalf("Failed to set queue QOS: %v", err)
+		return fmt.Errorf("failed to set queue QOS: %v", err)
 	}
 
 	consumer, err := w.queue.Consume(w.queueNameJobs, w.consumerTag, false, false, false, false, nil)
 	if err != nil {
-		w.logger.Fatalf("Failed to create queue consumer: %v", err)
-		return err
+		return fmt.Errorf("failed to create queue consumer: %v", err)
 	}
 
 	var msg amqp.Delivery
@@ -62,6 +61,7 @@ func (w *Worker) consumeJobs(ctx context.Context) error {
 		}
 	}
 }
+
 func (w *Worker) handleMessage(msg amqp.Delivery) {
 	res, err := w.messageHandler(msg)
 	if err != nil {

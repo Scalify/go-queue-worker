@@ -6,8 +6,9 @@ import "github.com/streadway/amqp"
 type TestQueue struct {
 	NoopAcknowledger
 
-	QueuesDeclared []string
-	Messages       [][]byte
+	QueuesDeclared               []string
+	Messages                     [][]byte
+	QueueDeclaredErr, ConsumeErr error
 }
 
 // NewTestQueue returns a new TestQueue instance
@@ -20,6 +21,10 @@ func NewTestQueue() *TestQueue {
 
 // QueueDeclare doesn't really do something.
 func (t *TestQueue) QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args amqp.Table) (amqp.Queue, error) {
+	if t.QueueDeclaredErr != nil {
+		return amqp.Queue{}, t.QueueDeclaredErr
+	}
+
 	t.QueuesDeclared = append(t.QueuesDeclared, name)
 	return amqp.Queue{
 		Name: name,
@@ -28,8 +33,11 @@ func (t *TestQueue) QueueDeclare(name string, durable, autoDelete, exclusive, no
 
 // Consume just pushes all messages from the Messages field into the channel.
 func (t *TestQueue) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
-	c := make(chan amqp.Delivery, len(t.Messages))
+	if t.ConsumeErr != nil {
+		return nil, t.ConsumeErr
+	}
 
+	c := make(chan amqp.Delivery, len(t.Messages))
 	for _, msg := range t.Messages {
 		c <- amqp.Delivery{
 			Body:         msg,

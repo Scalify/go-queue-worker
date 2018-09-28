@@ -2,6 +2,7 @@ package queueworker
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -45,46 +46,76 @@ func TestWorkerStartDeclaresQueues(t *testing.T) {
 
 func TestWorker(t *testing.T) {
 	cases := []struct {
-		value         interface{}
-		err, expErr   error
-		queue         int
-		acked, nacked bool
+		value            interface{}
+		queueDeclaredErr error
+		consumeErr       error
+		err, expErr      error
+		queue            int
+		acked, nacked    bool
 	}{
 		{
-			value:  nil,
-			err:    nil,
-			queue:  1,
-			acked:  true,
-			nacked: false,
+			value:            nil,
+			err:              nil,
+			expErr:           nil,
+			queueDeclaredErr: nil,
+			queue:            1,
+			acked:            true,
+			nacked:           false,
 		},
 		{
-			value:  &test{false},
-			err:    nil,
-			queue:  2,
-			acked:  true,
-			nacked: false,
+			value:            &test{false},
+			err:              nil,
+			expErr:           nil,
+			queueDeclaredErr: nil,
+			queue:            2,
+			acked:            true,
+			nacked:           false,
+		},
+		{
+			value:            &test{false},
+			err:              nil,
+			expErr:           errors.New("unable to create queue job: whoops, something happened"),
+			queueDeclaredErr: errors.New("whoops, something happened"),
+			queue:            1,
+			acked:            false,
+			nacked:           false,
+		},
+		{
+			value:      &test{false},
+			err:        nil,
+			expErr:     errors.New("failed to create queue consumer: whoops, something happened"),
+			consumeErr: errors.New("whoops, something happened"),
+			queue:      1,
+			acked:      false,
+			nacked:     false,
 		},
 	}
 
 	for i, c := range cases {
 		q := internalTesting.NewTestQueue()
 		b, logger := internalTesting.NewTestLogger()
-		w, err := New(q, logger, 1, "job", "job-res", newTestHandler(c.value, c.err))
-		if err != nil {
-			t.Fatal(err)
+		w, newErr := New(q, logger, 1, "job", "job-res", newTestHandler(c.value, c.err))
+		if newErr != nil {
+			t.Fatalf("case %d: got error during new: %v", i, newErr)
 		}
 
 		q.Messages = append(q.Messages, []byte("{\"test\":true}"))
+		q.QueueDeclaredErr = c.queueDeclaredErr
+		q.ConsumeErr = c.consumeErr
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
-			if err := w.Start(ctx); err != nil {
-				t.Fatal(err)
-			}
+			time.Sleep(10 * time.Millisecond)
+			cancel()
 		}()
 
-		time.Sleep(10 * time.Millisecond)
-		cancel()
+		startErr := w.Start(ctx)
+		if c.expErr == nil && startErr != nil {
+			t.Fatalf("case %d: got error during start: %v", i, startErr)
+		} else if c.expErr != nil && (startErr == nil || c.expErr.Error() != startErr.Error()) {
+			t.Fatalf("case %d: Expected to get error %q, got %q", i, c.expErr, startErr)
+		}
+
 		internalTesting.CheckLogger(t, b)
 
 		if len(q.Messages) != c.queue {
